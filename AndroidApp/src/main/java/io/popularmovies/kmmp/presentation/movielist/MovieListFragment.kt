@@ -8,43 +8,59 @@ import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import androidx.fragment.app.Fragment
+import androidx.lifecycle.ViewModelProviders
 import androidx.recyclerview.widget.GridLayoutManager
 import com.jarroyo.kmp_mvvm.R
+import com.jarroyo.sharedcode.base.Response
 import io.popularmovies.kmmp.HostActivity
 import io.popularmovies.kmmp.domain.MovieContainer
-import io.popularmovies.kmmp.domain.MovieListCase
 import io.popularmovies.kmmp.domain.map
 import io.popularmovies.kmmp.model.Movie
-import io.popularmovies.kmmp.presentation.MovieListPresenter
-import io.popularmovies.kmmp.presentation.MovieListView
-import io.popularmovies.kmmp.presentation.MovieNavigator
-import io.popularmovies.kmmp.presentation.MovieState
+import io.popularmovies.kmmp.presentation.*
 import io.popularmovies.kmmp.presentation.movielist.recyclerview.MovieListAdapter
 import io.popularmovies.kmmp.presentation.movielist.recyclerview.SpacesItemDecoration
 import kotlinx.android.synthetic.main.fragment_movie_list.*
-import org.kodein.di.KodeinAware
-import org.kodein.di.android.x.kodein
-import org.kodein.di.generic.instance
 import java.util.*
 
 /**
  * A fragment that shows popular movie posters on a recycler view
  */
-class MovieListFragment : Fragment(), MovieListAdapter.MovieClickListener,
-    MovieListView,
-    KodeinAware {
-
-    override val kodein by kodein()
+class MovieListFragment : Fragment(), MovieListAdapter.MovieClickListener{
 
     private var gridLayoutManager: GridLayoutManager? = null
 
     private val moviesAdapter by lazy { MovieListAdapter(this) }
 
-    private val listCase: MovieListCase by instance<MovieListCase>()
+    lateinit var movieListViewModel: MovieListViewModel
 
-    /**********************************************************************************************
-     * Lifecycle callbacks
-     *********************************************************************************************/
+    override fun onCreate(savedInstanceState: Bundle?) {
+        super.onCreate(savedInstanceState)
+
+        movieListViewModel = ViewModelProviders.of(this).get(MovieListViewModel::class.java)
+    }
+
+    fun getPopularMoviesstate(state: GetPopularMoviesState) {
+        when (state) {
+
+            is SuccessGetPopularMoviesState -> {
+                progress_bar.visibility = View.GONE
+                val response = state.response as Response.Success
+                showMovieList(response.data)
+            }
+
+            is LoadingGetPopularMoviesState -> {
+                progress_bar.visibility = View.VISIBLE
+            }
+
+            is ErrorGetPopularMoviesState -> {
+                progress_bar.visibility = View.GONE
+                val response = state.response as Response.Error
+                errorView.text = response.message
+                errorView.visibility = View.VISIBLE
+            }
+        }
+    }
+
     override fun onCreateView(
         inflater: LayoutInflater,
         container: ViewGroup?,
@@ -53,15 +69,9 @@ class MovieListFragment : Fragment(), MovieListAdapter.MovieClickListener,
         return inflater.inflate(R.layout.fragment_movie_list, container, false)
     }
 
-    override fun showState(state: MovieState) {
-        state.popularMoviesResponse.map(this@MovieListFragment::showMovieList)
-    }
-
     private fun showMovieList(movieList: List<MovieContainer.Movie>) {
         moviesAdapter.setData(movieList)
         moviesAdapter.notifyDataSetChanged()
-        progress_bar.visibility = View.GONE
-        errorView.visibility = View.GONE
     }
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
@@ -70,11 +80,10 @@ class MovieListFragment : Fragment(), MovieListAdapter.MovieClickListener,
         postponeEnterTransition()
         setupRecyclerView()
 
+        movieListViewModel.mGetPopularMovieListLiveData.addObserver { getPopularMoviesstate(it) }
+
         if (savedInstanceState == null && moviesAdapter.getData().isEmpty()) {
-            MovieListPresenter(
-                this,
-                listCase
-            ).start()
+            movieListViewModel.getPopularMoviesList()
         }
 
         Handler().postDelayed({ startPostponedEnterTransition() }, 300)
