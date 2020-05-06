@@ -42,9 +42,8 @@ class MovieListViewModel : ViewModel() {
      * GET GITHUB REPO LIST
      */
     fun getPopularMoviesList() = launchSilent(coroutineContext, exceptionHandler, job) {
-        mGetPopularMovieListLiveData.postValue(LoadingGetPopularMoviesState())
-
-        val request = GetPopularMoviesListRequest()
+        //mGetPopularMovieListLiveData.postValue(LoadingGetPopularMoviesState())
+         val request = GetPopularMoviesListRequest()
         val response = mGetPopularMoviesUseCase.execute(request)
         processPopularMoviesListResponse(response)
     }

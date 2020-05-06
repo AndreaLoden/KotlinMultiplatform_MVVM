@@ -15,9 +15,6 @@ import io.popularmovies.kmmp.domain.MovieContainer
 import io.popularmovies.kmmp.domain.MovieDetailCase
 import io.popularmovies.kmmp.domain.map
 import io.popularmovies.kmmp.model.Movie
-import io.popularmovies.kmmp.presentation.MovieDetailPresenter
-import io.popularmovies.kmmp.presentation.MovieDetailState
-import io.popularmovies.kmmp.presentation.MovieDetailView
 import io.popularmovies.kmmp.presentation.moviedetail.recyclerview.ReviewsAdapter
 import io.popularmovies.kmmp.presentation.moviedetail.recyclerview.TrailersAdapter
 import kotlinx.android.synthetic.main.detail_fragment_content.*
@@ -26,7 +23,7 @@ import org.kodein.di.android.x.kodein
 import org.kodein.di.generic.instance
 
 class MovieDetailFragment : Fragment(),
-    MovieDetailView, KodeinAware {
+     KodeinAware {
 
     override val kodein by kodein()
 
@@ -56,10 +53,6 @@ class MovieDetailFragment : Fragment(),
         if (arguments?.containsKey(ARG_MOVIE) == true) {
             (arguments?.getSerializable(ARG_MOVIE) as Movie).let { itMovie ->
 
-                MovieDetailPresenter(
-                    this,
-                    detailCase
-                ).start(itMovie.id ?: "")
 
                 itMovie.originalTitle?.let { (activity as HostActivity).setToolbarTitle(it) }
 
@@ -112,21 +105,4 @@ class MovieDetailFragment : Fragment(),
 
             return fragment
         }
-    }
-
-    override fun showState(state: MovieDetailState) {
-
-        state.movieReviewsResponse.map {
-            tv_reviews_label.visibility = View.VISIBLE
-            reviewsAdapter?.setData(it)
-            reviewsAdapter?.notifyDataSetChanged()
-        }
-
-        state.movieTrailers.map {
-            tv_trailers_label.visibility = View.VISIBLE
-
-            trailersAdapter?.setData(it)
-            trailersAdapter?.notifyDataSetChanged()
-        }
-    }
-}
+    }}
