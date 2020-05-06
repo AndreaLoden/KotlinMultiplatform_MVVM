@@ -1,27 +1,37 @@
 package io.popularmovies.kmmp.presentation
 
+import com.jarroyo.kotlinmultiplatform.source.network.GitHubApi
 import com.jarroyo.sharedcode.base.Response
+import com.jarroyo.sharedcode.data.source.network.NetworkDataSource
 import com.jarroyo.sharedcode.di.KodeinInjector
 import com.jarroyo.sharedcode.utils.coroutines.launchSilent
 import dev.icerock.moko.mvvm.livedata.MutableLiveData
 import dev.icerock.moko.mvvm.viewmodel.ViewModel
-import io.popularmovies.kmmp.Background
-import io.popularmovies.kmmp.Main
 import io.popularmovies.kmmp.data.GetPopularMoviesListRequest
+import io.popularmovies.kmmp.data.MoviesDbApi
+import io.popularmovies.kmmp.data.MoviesDbRepository
 import io.popularmovies.kmmp.domain.GetPopularMoviesListUseCase
 import io.popularmovies.kmmp.domain.MovieContainer
-import io.popularmovies.kmmp.domain.MovieListCase
-import kotlinx.coroutines.*
+import kotlinx.coroutines.CoroutineExceptionHandler
+import kotlinx.coroutines.Job
 import org.kodein.di.erased.instance
 import kotlin.coroutines.CoroutineContext
 
-class MovieListViewModel: ViewModel() {
+class MovieListViewModel : ViewModel() {
 
     // LIVE DATA
-    var mGetPopularMovieListLiveData = MutableLiveData<GetPopularMoviesState>(LoadingGetPopularMoviesState())
+    var mGetPopularMovieListLiveData =
+        MutableLiveData<GetPopularMoviesState>(LoadingGetPopularMoviesState())
 
     // USE CASE
-    private val mGetPopularMoviesUseCase by KodeinInjector.instance<GetPopularMoviesListUseCase>()
+    private val mGetPopularMoviesUseCase = GetPopularMoviesListUseCase(
+        MoviesDbRepository(
+            NetworkDataSource(
+                GitHubApi(),
+                MoviesDbApi()
+            )
+        )
+    )
 
     // ASYNC - COROUTINES
     private val coroutineContext by KodeinInjector.instance<CoroutineContext>()
@@ -42,7 +52,7 @@ class MovieListViewModel: ViewModel() {
     /**
      * PROCCESS RESPONSE
      */
-    fun processPopularMoviesListResponse(response: Response<List<MovieContainer.Movie>>){
+    fun processPopularMoviesListResponse(response: Response<List<MovieContainer.Movie>>) {
         if (response is Response.Success) {
             mGetPopularMovieListLiveData.postValue(
                 SuccessGetPopularMoviesState(

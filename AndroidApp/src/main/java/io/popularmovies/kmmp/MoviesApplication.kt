@@ -1,6 +1,8 @@
 package io.popularmovies.kmmp
 
 import android.app.Application
+import com.jarroyo.sharedcode.di.InjectorCommon
+import com.jarroyo.sharedcode.utils.networkSystem.ContextArgs
 import io.popularmovies.kmmp.data.MovieApi
 import io.popularmovies.kmmp.data.MovieReviewRepoImpl
 import io.popularmovies.kmmp.data.PopularListMovieRepoImpl
@@ -43,5 +45,12 @@ class MoviesApplication : Application(), KodeinAware {
                 instance()
             )
         }
+    }
+
+    override fun onCreate() {
+        super.onCreate()
+
+        InjectorCommon.provideContextArgs(ContextArgs(this))
+
     }
 }
